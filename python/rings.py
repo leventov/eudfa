@@ -1,4 +1,4 @@
-from python.utils import prefix
+from utils import prefix
 
 class Ring:
 	def __init__(self, first, *accepts):
