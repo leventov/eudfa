@@ -1,6 +1,7 @@
 package ru.leventov.eudfa;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Date: 01.03.12
@@ -25,22 +26,38 @@ public class Primes {
 			i++;
 		}
 	}
-	
+
+	// least number with 10 prime divs is 6469693230
+	private static int[] divs = new int[10];
+
 	public static int[] primeDivisors(int n) {
-		ArrayList<Integer> results = new ArrayList<>();
+		if (!ERATO[n]) // prime has no prime divisors
+			return new int[0];
+		int dc = 0;
 		int i = 0;
 		while (n > 1) {
 			if (n % PRIMES[i] == 0) {
-				results.add(PRIMES[i]);
+				divs[dc++] = PRIMES[i];
 				while (n % PRIMES[i] == 0) {
 					n /= PRIMES[i];
 				}
 			}
 			i++;
 		}
-		int[] r = new int[results.size()];
-		for (i = 0; i < r.length; i++)
-			r[i] = results.get(i).intValue();
-		return r;
+		return Arrays.copyOf(divs, dc);
+	}
+	
+	public static int lcm(int a, int b) {
+		int p = a * b;
+		while (b != 0) {
+			int t = b;
+			b = a % b;
+			a = t;
+		}
+		return p / a;
+	}
+
+	public static void main(String[] args) {
+		System.out.println(Arrays.toString(PRIMES));
 	}
 }
