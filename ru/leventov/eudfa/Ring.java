@@ -216,7 +216,7 @@ public final class Ring extends UDFA {
 	}
 	
 	private static void normalizeArray(int[] ar, int length) {
-		TreeSet<Integer> aSet = new TreeSet<>();
+		TreeSet<Integer> aSet = new TreeSet<Integer>();
 		for (int a : ar) aSet.add(a % length);
 		ar = new int[aSet.size()];
 		Iterator<Integer> aIt = aSet.iterator();

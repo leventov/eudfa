@@ -10,7 +10,7 @@ import static ru.leventov.eudfa.Primes.lcm;
  */
 public class Tests {
 	public static HashMap<Integer, Integer> productLengths(int f, int s) {
-		HashMap<Integer, Integer> lengthMap = new HashMap<>();
+		HashMap<Integer, Integer> lengthMap = new HashMap<Integer, Integer>();
 		for (int i = 0; i <= lcm(f, s); i++) lengthMap.put(i, 0);
 
 		for (int i = 0; i < 1 << f; i++) {

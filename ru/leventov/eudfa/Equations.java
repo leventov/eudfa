@@ -23,18 +23,30 @@ public class Equations {
 		if (ll % pl != 0)
 			return Collections.emptyList();
 
-		ArrayList<Ring> solutions = new ArrayList<>();
+		ArrayList<Ring> solutions = new ArrayList<Ring>();
 		
 		 // length of the product must divide right
-		for(int i = 1; i < 5; i++) { // 20?
+		for(int i = 1; i < 7; i++) { // 20?
 			solutions.addAll(iSolveRight(left, product, i * pl));
 		}
 
 		return solutions;
 	}
+
+	public static Collection<Ring> solveRight(Ring left, Ring product,
+	                                          int rightLength) {
+		if (rightLength <= 0 || product == Ring.FULL)
+			throw new IllegalArgumentException();
+		
+		int pl = product.length();
+		if (left.length() % pl != 0 || rightLength % pl != 0)
+			return Collections.emptyList();
+
+		return iSolveRight(left, product, rightLength);
+	}
 	
-	public static Collection<Ring> iSolveRight(Ring left, Ring product,
-												int rightLength) {
+	private static Collection<Ring> iSolveRight(Ring left, Ring product,
+	                                            int rightLength) {
 		int rawLen = lcm(left.length(), rightLength);
 		int[] rawProductAccepts = 
 				product.wide(rawLen / product.length()).accepts();
@@ -52,7 +64,7 @@ public class Equations {
 					rawProductAccepts[i] - rawProductAccepts[from];
 		}
 		
-		ArrayList<Ring> solutions = new ArrayList<>();
+		ArrayList<Ring> solutions = new ArrayList<Ring>();
 		
 		int[] t = new int[al];
 		// from 1 - don't try EMPTY as second 
@@ -62,13 +74,21 @@ public class Equations {
 				if ((i & (1 << k)) != 0) t[c++] = allRightAccepts[k];
 
 			Ring right = byAccepts(rightLength, copyOf(t, c));
-			if (left.multiply(right).equals(product))
-				solutions.add(right);
+			if (left.multiply(right).equals(product)) {
+				if (right.simple())
+					solutions.add(right);
+			}
 		}
 		return solutions;
 	}
 
 	public static void main(String[] args) {
-		solveRight(byAccepts(6, new int[]{1}), byAccepts(3, new int[]{0, 1}));
+		Collection<Ring> solutions = solveRight(
+				byAccepts(8, new int[]{1, 2, 3, 4}),
+				byAccepts(4, new int[]{0, 1, 2}));
+		for (Ring r: solutions) {
+			System.out.println(r);
+		}
+		System.out.println(solutions.size());
 	}
 }
