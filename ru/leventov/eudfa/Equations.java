@@ -73,7 +73,7 @@ public class Equations {
 
 	private static interface RightSolver {
 		public Collection<Ring> iSolveRight(Ring left, Ring product,
-											int rightLength);
+		                                    int rightLength);
 	}
 	
 	private static class ClassicRightSolver implements RightSolver {
@@ -107,7 +107,7 @@ public class Equations {
 	private static class PrincipleRightSolver implements RightSolver {
 
 		public Collection<Ring> iSolveRight(Ring left, Ring product,
-											int rightLength) {
+		                                    int rightLength) {
 			int[] allRightAccepts =
 					getAllRightAccepts(left, product, rightLength);
 			int al = allRightAccepts.length;
@@ -154,7 +154,7 @@ public class Equations {
 
 
 	private static int[] getAllRightAccepts(Ring left, Ring product,
-											int rightLength) {
+	                                        int rightLength) {
 		int[] rawProductAccepts =
 				rawProduct(left, product, rightLength).accepts();
 
