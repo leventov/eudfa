@@ -1,6 +1,7 @@
 package ru.leventov.eudfa;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.TreeSet;
 
@@ -150,6 +151,10 @@ public final class Ring extends UDFA {
 		}
 		return res;
 	}
+	
+	public BitSet statesAsBitSet() {
+		return BitSet.valueOf(states);
+	}
 
 	
 	// factories
@@ -163,7 +168,7 @@ public final class Ring extends UDFA {
 		}
 
 		// accepts should be normalized and sorted
-		normalizeArray(accepts, length);
+		accepts = normalizeArray(accepts, length);
 
 		long[] states = new long[statesLength(length)];
 		acceptsToStates(states, accepts);
@@ -215,14 +220,15 @@ public final class Ring extends UDFA {
 		return byAccepts(c * length(), as);
 	}
 	
-	private static void normalizeArray(int[] ar, int length) {
+	private static int[] normalizeArray(int[] ar, int length) {
 		TreeSet<Integer> aSet = new TreeSet<Integer>();
 		for (int a : ar) aSet.add(a % length);
-		ar = new int[aSet.size()];
+		int[] res = new int[aSet.size()];
 		Iterator<Integer> aIt = aSet.iterator();
 		for (int i = 0; i < ar.length; i++) {
-			ar[i] = aIt.next();
+			res[i] = aIt.next();
 		}
+		return res;
 	}
 
 	private static int statesLength(int ringLength) {
