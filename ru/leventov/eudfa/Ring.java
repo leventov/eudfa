@@ -164,7 +164,7 @@ public final class Ring extends UDFA {
 
 		if (length == 1) {
 			if (accepts.length == 1) return FULL;
-			else return EMPTY;
+			return EMPTY;
 		}
 
 		// accepts should be normalized and sorted
@@ -181,9 +181,8 @@ public final class Ring extends UDFA {
 			throw new IllegalArgumentException();
 		
 		if (length == 1) {
-			if ((source & 1) == 1) {
-				return FULL;
-			} else return EMPTY;
+			if ((source & 1) == 1) return FULL;
+			return EMPTY;
 		}
 		
 		int[] t = new int[length];
@@ -204,6 +203,13 @@ public final class Ring extends UDFA {
 	
 	
 	// utils
+	
+	public Ring wideTo(int l) {
+		if (l % length() != 0) 
+			throw new IllegalArgumentException();
+		
+		return wide(l/length());
+	}
 	/**
 	 * @param c - coefficient - ex. wide([0] % 2, 2) = [0, 2] % 4 
 	 */
@@ -225,7 +231,7 @@ public final class Ring extends UDFA {
 		for (int a : ar) aSet.add(a % length);
 		int[] res = new int[aSet.size()];
 		Iterator<Integer> aIt = aSet.iterator();
-		for (int i = 0; i < ar.length; i++) {
+		for (int i = 0; i < aSet.size(); i++) {
 			res[i] = aIt.next();
 		}
 		return res;

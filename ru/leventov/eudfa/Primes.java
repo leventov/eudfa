@@ -46,15 +46,18 @@ public class Primes {
 		}
 		return Arrays.copyOf(divs, dc);
 	}
-	
-	public static int lcm(int a, int b) {
-		int p = a * b;
+
+	public static int gcd(int a, int b) {
 		while (b != 0) {
 			int t = b;
 			b = a % b;
 			a = t;
 		}
-		return p / a;
+		return a;
+	}
+	
+	public static int lcm(int a, int b) {
+		return a * b / gcd(a, b);
 	}
 
 	public static void main(String[] args) {

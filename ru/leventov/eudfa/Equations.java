@@ -1,12 +1,11 @@
 package ru.leventov.eudfa;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 
+import static java.lang.Math.min;
 import static java.util.Arrays.binarySearch;
 import static java.util.Arrays.copyOf;
+import static ru.leventov.eudfa.Primes.gcd;
 import static ru.leventov.eudfa.Primes.lcm;
 import static ru.leventov.eudfa.Ring.byAccepts;
 
@@ -16,17 +15,17 @@ import static ru.leventov.eudfa.Ring.byAccepts;
  */
 public class Equations {
 
-	public static Collection<Ring> solveRight(Ring left, Ring product) {
+	public static List<Ring> solveRight(Ring left, Ring product) {
 		return solveRight(left, product, CLASSIC);
 	}
 
-	public static Collection<Ring> principleSolveRight(Ring left,
-	                                                   Ring product) {
+	public static List<Ring> principleSolveRight(Ring left,
+												 Ring product) {
 		return solveRight(left, product, PRINCIPLE);
 	}
 
-	private static Collection<Ring> solveRight(Ring left, Ring product,
-	                                           RightSolver solver) {
+	private static List<Ring> solveRight(Ring left, Ring product,
+										 RightSolver solver) {
 		if (product == Ring.FULL) throw new IllegalArgumentException();
 
 		int ll = left.length();
@@ -45,18 +44,18 @@ public class Equations {
 	}
 
 
-	public static Collection<Ring> solveRight(Ring left, Ring product,
+	public static List<Ring> solveRight(Ring left, Ring product,
 	                                          int rightLength) {
 		return solveRight(left, product, rightLength, CLASSIC);
 	}
 
-	public static Collection<Ring> principleSolveRight(Ring left,
+	public static List<Ring> principleSolveRight(Ring left,
 	                                                   Ring product,
 	                                                   int rightLength) {
 		return solveRight(left, product, rightLength, PRINCIPLE);
 	}
 
-	private static Collection<Ring> solveRight(Ring left, Ring product,
+	private static List<Ring> solveRight(Ring left, Ring product,
 	                                          int rightLength,
 	                                          RightSolver solver) {
 		if (rightLength <= 0 || product == Ring.FULL)
@@ -72,13 +71,13 @@ public class Equations {
 	
 
 	private static interface RightSolver {
-		public Collection<Ring> iSolveRight(Ring left, Ring product,
+		public List<Ring> iSolveRight(Ring left, Ring product,
 		                                    int rightLength);
 	}
 	
 	private static class ClassicRightSolver implements RightSolver {
 		
-		public Collection<Ring> iSolveRight(Ring left, Ring product, 
+		public List<Ring> iSolveRight(Ring left, Ring product,
 		                                    int rightLength) {
 			int[] allRightAccepts =
 					getAllRightAccepts(left, product, rightLength);
@@ -106,11 +105,13 @@ public class Equations {
 
 	private static class PrincipleRightSolver implements RightSolver {
 
-		public Collection<Ring> iSolveRight(Ring left, Ring product,
+		public List<Ring> iSolveRight(Ring left, Ring product,
 		                                    int rightLength) {
 			int[] allRightAccepts =
 					getAllRightAccepts(left, product, rightLength);
 			int al = allRightAccepts.length;
+			
+			int minMultipleLength = gcd(left.length(), rightLength);
 
 			BitSet[] sets = new BitSet[al];
 
@@ -120,16 +121,18 @@ public class Equations {
 				Ring right = byAccepts(rightLength,
 						new int[]{allRightAccepts[i]});
 
-				sets[i] = left.multiply(right).statesAsBitSet();
-			}
-			for (int i = 0; i < sets.length; i++) {
-				BitSet set = sets[i];
-				System.out.println(allRightAccepts[i] + " " + set);
+				sets[i] = left.multiply(right)
+						.wideTo(minMultipleLength).statesAsBitSet();
 			}
 
-			// why wide to left??
+//			for (int i = 0; i < sets.length; i++) {
+//				BitSet set = sets[i];
+//				System.out.println(allRightAccepts[i] + " " + set);
+//			}
+
+
 			BitSet productSet =
-					product.wide(left.length() / product.length())
+					product.wideTo(minMultipleLength)
 							.statesAsBitSet();
 
 			int[] t = new int[al];
@@ -166,17 +169,18 @@ public class Equations {
 		int al = to - from;
 
 		int[] allRightAccepts = new int[al];
-		for(int i = from; i < to; i++) {
-			allRightAccepts[i - from] =
-					rawProductAccepts[i] - rawProductAccepts[from];
+		System.arraycopy(rawProductAccepts, from,
+				allRightAccepts, 0, al);
+		for(int i = 0; i < al; i++) {
+			allRightAccepts[i] -= start;
 		}
 		return allRightAccepts;
 	}
 
 	public static void main(String[] args) {
-		Collection<Ring> solutions = solveRight(
-				byAccepts(6, new int[]{1, 3}),
-				byAccepts(3, new int[]{2, 0}), 18);
+		Collection<Ring> solutions = principleSolveRight(
+				byAccepts(9, new int[]{0, 1}),
+				byAccepts(3, new int[]{0, 1}));
 		for (Ring r: solutions) {
 			System.out.println(r);
 		}
