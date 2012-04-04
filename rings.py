@@ -29,10 +29,9 @@ def psolve(left, product, l=None, sorted=False):
 
 def vsolve(left, product):
 	pl = product.length()
-	for rl in range(pl, pl*20, pl):
-		a = Equations.principleSolveRight(left, product, rl)
-		if a:
-			return max(a, lambda r: len(r.getAccepts()))
+	a = Equations.principleSolveRight(left, product, pl)
+	if a:
+		return max(a, lambda r: len(r.getAccepts()))
 	return 0
 
 
