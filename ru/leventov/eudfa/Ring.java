@@ -105,7 +105,7 @@ public final class Ring extends UDFA {
 			if (states[i]) accepts[ac++] = i;
 		}
 		
-		return simplify(leftLen, accepts, null);
+		return simplify(rawLen, accepts, null);
 	}
 
 	public UDFA multiply(UDFA other) {

@@ -31,4 +31,13 @@ public class BitUtilsTests {
 		assertTrue(ringMultiply(0b0100L, 4, 0b00010101L, 8) == 0b0101L); // 0010 * 10101000 = 1010
 		assertTrue(ringMultiply(0b0100L, 4, 0b0000010101L, 10) == 1L); // 0010 * 1010100000 = 10
 	}
+
+	@Test public void testRingSolve() {
+		// see testRingMultiply
+		assertTrue(ringSolve(0b101L, 0b110L, 3) == 0b100L);
+		assertTrue(ringSolve(1L, 1L, 1) == 1L);
+		assertTrue(ringSolve(1L, 0b11L, 2) == 0b11L);
+		assertTrue(ringSolve(0b11L, 0b10L, 2) == 0L); // ничего не подходит
+		assertTrue(ringSolve(0b00010101L, 0b01010101L, 8) ==  0b01010101L); // 0010 * 10101000 = 1010
+	}
 }

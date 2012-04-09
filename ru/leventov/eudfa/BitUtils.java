@@ -99,12 +99,14 @@ public class BitUtils {
 		long solution = 0L, notP = ~product;
 
 		for(int i = 0; i < length; i++) {
-			long shLeft = ((multiple << i) | (multiple >>> (length - i)))
+			long shM = ((multiple << i) | (multiple >>> (length - i)))
 			              & tMask;
-			if ((shLeft & notP) != 0) continue; // вылезло
+			if ((shM & notP) != 0) continue; // вылезло
 			solution |= (1L << i);
+			product &= ~shM;
 		}
-		return solution;
+		if (product == 0) return solution; // полностью решает
+		return 0L;
 	}
 
 	public static ArrayList<Long> possibleLeftsFromProduct(

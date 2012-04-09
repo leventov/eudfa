@@ -9,6 +9,7 @@ import static ru.leventov.eudfa.Primes.gcd;
 import static ru.leventov.eudfa.Primes.lcm;
 import static ru.leventov.eudfa.Ring.FULL;
 import static ru.leventov.eudfa.Ring.byAccepts;
+import static ru.leventov.eudfa.Ring.byBits;
 
 /**
  * Date: 06.03.12
@@ -30,17 +31,19 @@ public class Equations {
 			for(int i = 0; i < rawPL; i += pl) {
 				leftSource |= leftSource >>> i;
 			}
-			return Ring.byBits(
-					pl, BitUtils.ringSolve(
+			long right = BitUtils.ringSolve(
 							leftSource,
 							product.getStatesChuck(0),
-							pl));
+							pl);
+			if (right == 0L) return null;
+			return byBits(pl, right);
 		}
 
 		int[] allRightAccepts = getAllRightAccepts(left, product);
 		int al = allRightAccepts.length;
 
 		BitSet productSet = product.statesAsBitSet();
+		BitSet cover = new BitSet();
 
 		int[] t = new int[al];
 		int c = 0;
@@ -50,11 +53,14 @@ public class Equations {
 			BitSet acceptSet = left.multiply(right)
 					.wideTo(pl).statesAsBitSet();
 
-			acceptSet.andNot(productSet);
-			if (acceptSet.isEmpty())
-				t[c++] = i;
+			BitSet as = (BitSet) acceptSet.clone();
+			as.andNot(productSet);
+			if (as.isEmpty()) {
+				cover.or(acceptSet);
+				t[c++] = allRightAccepts[i];
+			}
 		}
-		if (c == 0) return null;
+		if (c == 0 || !productSet.equals(cover)) return null;
 		return byAccepts(pl, copyOf(t, c));
 	}
 
