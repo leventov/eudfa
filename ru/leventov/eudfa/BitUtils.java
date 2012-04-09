@@ -39,11 +39,12 @@ public class BitUtils {
 		long result = (right & 1L) == 1L ? left : 0L;
 		for(int a = 1; a < rightLen; a++)
 			if ((right & (1L << a)) != 0L)
-				result |= (left << a) | (left >> (rightLen - a));
+				result |= (left << a) | (left >>> (rightLen - a));
 
 		long compRes = result;
+		// why rl + ll ? not rl only?
 		for(int i = resLen; i < rightLen + leftLen; i += resLen) {
-			compRes |= result >> i;
+			compRes |= result >>> i;
 		}
 
 		// cleanup result
@@ -98,7 +99,7 @@ public class BitUtils {
 		long solution = 0L, notP = ~product;
 
 		for(int i = 0; i < length; i++) {
-			long shLeft = ((multiple << i) | (multiple >> (length - i)))
+			long shLeft = ((multiple << i) | (multiple >>> (length - i)))
 			              & tMask;
 			if ((shLeft & notP) != 0) continue; // вылезло
 			solution |= (1L << i);
@@ -132,7 +133,7 @@ public class BitUtils {
 			long left = baseLeft & leftMask;
 			for(int rs = 0; rs < length; rs += rightStep) {
 
-				long shLeft = ((left << rs) | (left >> (length - rs)))
+				long shLeft = ((left << rs) | (left >>> (length - rs)))
 				              & tMask;
 
 				// не подходит
