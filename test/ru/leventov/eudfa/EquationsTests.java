@@ -19,7 +19,7 @@ public class EquationsTests {
 	@Test public void less64() {
 		Ring r1 = byAccepts(12, new int[] {0}), r2 = byAccepts(4, new int[] {3});
 		Ring r3 = solveRight(r1, r2);
-		assertTrue(r1.multiply(r3).equals(r3));
+		assertTrue(r1.multiply(r3).equals(r2));
 	}
 
 	@Test public void less64noSolution() {
