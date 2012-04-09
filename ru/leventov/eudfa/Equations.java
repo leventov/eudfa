@@ -7,6 +7,7 @@ import static java.util.Arrays.binarySearch;
 import static java.util.Arrays.copyOf;
 import static ru.leventov.eudfa.Primes.gcd;
 import static ru.leventov.eudfa.Primes.lcm;
+import static ru.leventov.eudfa.Ring.FULL;
 import static ru.leventov.eudfa.Ring.byAccepts;
 
 /**
@@ -15,153 +16,56 @@ import static ru.leventov.eudfa.Ring.byAccepts;
  */
 public class Equations {
 
-	public static List<Ring> solveRight(Ring left, Ring product) {
-		return solveRight(left, product, CLASSIC);
-	}
-
-	public static List<Ring> principleSolveRight(Ring left,
-												 Ring product) {
-		return solveRight(left, product, PRINCIPLE);
-	}
-
-	private static List<Ring> solveRight(Ring left, Ring product,
-										 RightSolver solver) {
-		if (product == Ring.FULL) throw new IllegalArgumentException();
-
-		int ll = left.length();
-		int pl = product.length();
-		if (ll % pl != 0)
-			return Collections.emptyList();
-
-		ArrayList<Ring> solutions = new ArrayList<Ring>();
+	public static Ring solveRight(Ring left, Ring product) {
+		if (product == Ring.FULL)
+			return FULL;
 		
-		 // length of the product must divide right
-		for(int i = 1; i < 7; i++) { // 20?
-			solutions.addAll(solver.iSolveRight(left, product, i * pl));
+		int pl = product.length(), ll = left.length();
+		if (gcd(ll, pl) == 1)
+			return null;
+
+		int rawPL = lcm(ll, pl);
+		if (rawPL <= 64) {
+			long leftSource = left.wideTo(rawPL).getStatesChuck(0);
+			for(int i = 0; i < rawPL; i += pl) {
+				leftSource |= leftSource >>> i;
+			}
+			return Ring.byBits(
+					pl, BitUtils.ringSolve(
+							leftSource,
+							product.getStatesChuck(0),
+							pl));
 		}
 
-		return solutions;
-	}
+		int[] allRightAccepts = getAllRightAccepts(left, product);
+		int al = allRightAccepts.length;
 
+		BitSet productSet = product.statesAsBitSet();
 
-	public static List<Ring> solveRight(Ring left, Ring product,
-	                                          int rightLength) {
-		return solveRight(left, product, rightLength, CLASSIC);
-	}
+		int[] t = new int[al];
+		int c = 0;
+		for(int i = 0; i < al; i++) {
+			Ring right = byAccepts(pl, new int[]{allRightAccepts[i]});
 
-	public static List<Ring> principleSolveRight(Ring left,
-	                                                   Ring product,
-	                                                   int rightLength) {
-		return solveRight(left, product, rightLength, PRINCIPLE);
-	}
+			BitSet acceptSet = left.multiply(right)
+					.wideTo(pl).statesAsBitSet();
 
-	private static List<Ring> solveRight(Ring left, Ring product,
-	                                          int rightLength,
-	                                          RightSolver solver) {
-		if (rightLength <= 0 || product == Ring.FULL)
-			throw new IllegalArgumentException();
-		
-		int pl = product.length();
-		if (left.length() % pl != 0 || rightLength % pl != 0)
-			return Collections.emptyList();
-
-		return solver.iSolveRight(left, product, rightLength);
-	}
-	
-	
-
-	private static interface RightSolver {
-		public List<Ring> iSolveRight(Ring left, Ring product,
-		                                    int rightLength);
-	}
-	
-	private static class ClassicRightSolver implements RightSolver {
-		
-		public List<Ring> iSolveRight(Ring left, Ring product,
-		                                    int rightLength) {
-			int[] allRightAccepts =
-					getAllRightAccepts(left, product, rightLength);
-			int al = allRightAccepts.length;
-
-			ArrayList<Ring> solutions = new ArrayList<Ring>();
-
-			int[] t = new int[al];
-			// from 1 - don't try EMPTY as second 
-			for(int i = 1; i < (1 << al); i++) {
-				int c = 0;
-				for(int k = 0; k < al; k++)
-					if ((i & (1 << k)) != 0) t[c++] = allRightAccepts[k];
-
-				Ring right = byAccepts(rightLength, copyOf(t, c));
-				if (left.multiply(right).equals(product)) {
-					if (right.simple())
-						solutions.add(right);
-				}
-			}
-			return solutions;			
+			acceptSet.andNot(productSet);
+			if (acceptSet.isEmpty())
+				t[c++] = i;
 		}
+		if (c == 0) return null;
+		return byAccepts(pl, copyOf(t, c));
 	}
-	private static ClassicRightSolver CLASSIC = new ClassicRightSolver();
-
-	private static class PrincipleRightSolver implements RightSolver {
-
-		public List<Ring> iSolveRight(Ring left, Ring product,
-		                                    int rightLength) {
-			int[] allRightAccepts =
-					getAllRightAccepts(left, product, rightLength);
-			int al = allRightAccepts.length;
-			
-			int minMultipleLength = gcd(left.length(), rightLength);
-
-			BitSet[] sets = new BitSet[al];
-
-			ArrayList<Ring> solutions = new ArrayList<Ring>();
-
-			for(int i = 0; i < al; i++) {
-				Ring right = byAccepts(rightLength,
-						new int[]{allRightAccepts[i]});
-
-				sets[i] = left.multiply(right)
-						.wideTo(minMultipleLength).statesAsBitSet();
-			}
-
-//			for (int i = 0; i < sets.length; i++) {
-//				BitSet set = sets[i];
-//				System.out.println(allRightAccepts[i] + " " + set);
-//			}
-
-
-			BitSet productSet =
-					product.wideTo(minMultipleLength)
-							.statesAsBitSet();
-
-			int[] t = new int[al];
-			for(int i = 1; i < (1 << al); i++) {
-				int c = 0;
-				BitSet result = new BitSet();
-				for(int k = 0; k < al; k++)
-					if ((i & (1 << k)) != 0) {
-						result.or(sets[k]);
-						t[c++] = allRightAccepts[k];
-					}
-				if (productSet.equals(result))
-					solutions.add(byAccepts(rightLength, copyOf(t, c)));
-			}
-
-			return solutions;
-		}
-	}
-	private static PrincipleRightSolver PRINCIPLE =
-			new PrincipleRightSolver();
 
 
 
-	private static int[] getAllRightAccepts(Ring left, Ring product,
-	                                        int rightLength) {
+	private static int[] getAllRightAccepts(Ring left, Ring product) {
+		int pl = product.length(); // = length of the right ring. see facts.txt
 		int[] rawProductAccepts =
-				rawProduct(left, product, rightLength).accepts();
+				rawProduct(left, product, pl).accepts();
 
-		int start = left.getAccept(0), end = start + rightLength;
+		int start = left.getAccept(0), end = start + pl;
 		int from = binarySearch(rawProductAccepts, start);
 		if (from < 0) from = -from - 1;
 		int to = binarySearch(rawProductAccepts, end);
@@ -176,20 +80,19 @@ public class Equations {
 		}
 		return allRightAccepts;
 	}
-
-	public static void main(String[] args) {
-		Collection<Ring> solutions = principleSolveRight(
-				byAccepts(9, new int[]{0, 1}),
-				byAccepts(3, new int[]{0, 1}));
-		for (Ring r: solutions) {
-			System.out.println(r);
-		}
-		System.out.println(solutions.size());
-	}
 	
 	private static Ring rawProduct(Ring multiple, Ring product,
 	                               int anotherLength) {
 		int rawLen = lcm(multiple.length(), anotherLength);
-		return product.wide(rawLen / product.length());
+		return product.wideTo(rawLen);
+	}
+
+	public static void main(String[] args) {
+		Ring solution = solveRight(
+				byAccepts(9, new int[]{0, 1}),
+				byAccepts(3, new int[]{0, 1}));
+
+		System.out.println(solution);
+
 	}
 }

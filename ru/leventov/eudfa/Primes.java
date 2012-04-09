@@ -12,6 +12,7 @@ public class Primes {
 	public static final boolean[] ERATO = new boolean[8000]; // 1000th prime is 7919
 	public static int[] PRIMES = new int[N_PRIMES];
 	static {
+		ERATO[0] = ERATO[1] = true;
 		int c = 0;
 		int i = 2;
 		while (c < N_PRIMES) {
@@ -25,6 +26,13 @@ public class Primes {
 			}
 			i++;
 		}
+	}
+
+	/**
+	 * @param n integer between 0 and 7920
+	 */
+	public static boolean isPrime(int n) {
+		return !ERATO[n];
 	}
 
 	// least number with 10 prime divs is 6469693230
@@ -55,12 +63,35 @@ public class Primes {
 		}
 		return a;
 	}
-	
+
+	/**
+	 * @param a element of the ring
+	 * @param m modulo
+	 * @return multiplicative inverse of a modulo m
+	 */
+	public static int inverse(int a, int m) {
+		// wiki: Extended Euclidean algorithm
+		int x = 0, y = 0, lastX = 1, lastY = 0;
+		while (m != 0) {
+			int k = a / m;
+
+			int t = m;
+			m = a % m;
+			a = t;
+
+			t = x;
+			x = lastX - k*x;
+			lastX = t;
+
+			t = y;
+			y = lastY - k*y;
+			lastY = t;
+		}
+		return lastX;
+	}
+
 	public static int lcm(int a, int b) {
 		return a * b / gcd(a, b);
 	}
 
-	public static void main(String[] args) {
-		System.out.println(Arrays.toString(PRIMES));
-	}
 }

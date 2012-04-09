@@ -7,7 +7,10 @@ import java.util.TreeSet;
 
 import static java.util.Arrays.binarySearch;
 import static java.util.Arrays.copyOf;
-import static ru.leventov.eudfa.Primes.lcm;
+import static ru.leventov.eudfa.BitUtils.ringMultiply;
+import static ru.leventov.eudfa.BitUtils.ringSimplify;
+import static ru.leventov.eudfa.Primes.gcd;
+import static ru.leventov.eudfa.Primes.isPrime;
 
 /**
  * Date: 01.03.12
@@ -63,21 +66,35 @@ public final class Ring extends UDFA {
 		// see BitSet and JLS; left shift already uses 6 lower bits 
 		return (states[resultLength / 64] & (1L << resultLength)) != 0;
 	}
+
+	public Ring pow(int e) {
+		int[] a = new int[accepts.length];
+		for(int i = 0; i < a.length; i++) {
+			a[i] = accepts[i] * e;
+		}
+		return byAccepts(length() * e, a);
+	}
 	
 	public Ring multiply(Ring other) {
 		if (other == EMPTY || other == FULL) return other;
 
-		int rawLen = lcm(length(), other.length());
+		int leftLen = length(), rightLen = other.length();
 
-		boolean[] states = new boolean[length()]; // raw len = mod
+		int rawLen = gcd(leftLen, rightLen);
+		if (rawLen == 1) return FULL;
+
+		if (leftLen <= 64 && rightLen <= 64) {
+			long leftSet = states[0], rightSet = other.states[0];
+			long productSet = ringMultiply(leftSet, leftLen, rightSet, rightLen);
+			int simpleLen = ringSimplify(productSet, rawLen);
+			productSet &= ~(-1L << simpleLen);
+			return byBits(simpleLen, productSet);
+		}
+
+		boolean[] states = new boolean[rawLen]; // raw len = mod
 		for (int a : accepts) {
-
-			// automata MUST move to the second ring
-			//states[a] = true;
-
-			for (int sOff = 0; sOff < rawLen; sOff += other.length())
-				for (int oa : other.accepts)
-					states[(a + sOff + oa) % length()] = true;
+			for (int oa : other.accepts)
+				states[(a + oa) % rawLen] = true;
 		}
 		
 		int ac = 0;
@@ -88,7 +105,7 @@ public final class Ring extends UDFA {
 			if (states[i]) accepts[ac++] = i;
 		}
 		
-		return simplify(length(), accepts, null);
+		return simplify(leftLen, accepts, null);
 	}
 
 	public UDFA multiply(UDFA other) {
@@ -103,25 +120,52 @@ public final class Ring extends UDFA {
 		if (accepts.length == 0) return EMPTY;
 		if (accepts.length == length) return FULL;
 
-		primes: for (int newLen = 2; newLen <= length / 2; newLen++) {
-			if (length % newLen != 0) continue;
+		/*
+		Method is private -> no need of defensive copying of the accepts array
+		 */
 
-			int aLen = binarySearch(accepts, newLen);
-			if (aLen < 0) aLen = -aLen - 1;
-			if (	aLen == 0 ||
-					accepts.length % aLen != 0 ||
-					accepts.length / aLen != length / newLen )
-				continue;
+		if (length <= 64) {
+			long bitSet = 0;
+			if (existing != null)
+				bitSet = existing.states[0];
+			else
+				for (int a : accepts) bitSet |= 1L << a;
 
-			int off = 0, j = 0;
-			for (int a : accepts) {
-				if (a != accepts[j] + off)
-					continue primes;
-				j++;
-				if ((j %= aLen) == 0) off += newLen;
+			int simpleLen = ringSimplify(bitSet, length);
+
+			if (simpleLen == length) {
+				if (existing != null) return existing;
+				return new Ring(simpleLen, accepts, new long[] {bitSet});
+			} else {
+				bitSet &= ~(-1L << simpleLen);
+				return new Ring(
+						simpleLen,
+						copyOf(accepts, simpleLen),
+						new long[] {bitSet}
+				);
 			}
-			return byAccepts(newLen, copyOf(accepts, aLen));
 		}
+
+		if (!isPrime(length))
+			potentialLengths: for (int newLen = 2; newLen <= length / 2; newLen++) {
+				if (length % newLen != 0) continue;
+
+				int aLen = binarySearch(accepts, newLen);
+				if (aLen < 0) aLen = -aLen - 1;
+				if (	aLen == 0 ||
+						accepts.length % aLen != 0 ||
+						accepts.length / aLen != length / newLen )
+					continue;
+
+				int off = 0, j = 0;
+				for (int a : accepts) {
+					if (a != accepts[j] + off)
+						continue potentialLengths;
+					j++;
+					if ((j %= aLen) == 0) off += newLen;
+				}
+				return byAccepts(newLen, copyOf(accepts, aLen));
+			}
 		if (existing != null) return existing;
 		else return byAccepts(length, accepts);
 	}
@@ -151,6 +195,10 @@ public final class Ring extends UDFA {
 		}
 		return res;
 	}
+
+	public long getStatesChuck(int no) {
+		return states[no];
+	}
 	
 	public BitSet statesAsBitSet() {
 		return BitSet.valueOf(states);
@@ -170,14 +218,19 @@ public final class Ring extends UDFA {
 		// accepts should be normalized and sorted
 		accepts = normalizeArray(accepts, length);
 
-		long[] states = new long[statesLength(length)];
-		acceptsToStates(states, accepts);
+		long[] states = new long[BitUtils.wordsLength(length)];
+		for (int a : accepts) {
+			states[a / 64] |= 1L << a;
+		}
 		
 		return new Ring(length, accepts, states);
 	}
-	
-	public static Ring byBits(int length, int source) {
-		if (length > 32 || length < 0) 
+
+	/**
+	 * @param source cleaned(!) bit set of the accepts
+	 */
+	public static Ring byBits(int length, long source) {
+		if (length > 64 || length < 1)
 			throw new IllegalArgumentException();
 		
 		if (length == 1) {
@@ -188,9 +241,9 @@ public final class Ring extends UDFA {
 		int[] t = new int[length];
 		int c = 0;
 		for (int k = 0; k < length; k++)
-			if ((source & (1 << k)) != 0) t[c++] = k;
+			if ((source & (1L << k)) != 0L) t[c++] = k;
 
-		long[] states = new long[] { ((1L << length) - 1) & source };
+		long[] states = new long[] { source };
 
 		return new Ring(length, copyOf(t, c), states);
 	}
@@ -203,7 +256,6 @@ public final class Ring extends UDFA {
 	
 	
 	// utils
-	
 	public Ring wideTo(int l) {
 		if (l % length() != 0) 
 			throw new IllegalArgumentException();
@@ -235,17 +287,5 @@ public final class Ring extends UDFA {
 			res[i] = aIt.next();
 		}
 		return res;
-	}
-
-	private static int statesLength(int ringLength) {
-		int resLen = ringLength / 64;
-		if (ringLength % 64 != 0) resLen++;
-		return resLen;
-	}
-
-	private static void acceptsToStates(long[] states, int[] accepts) {
-		for (int a : accepts) {
-			states[a / 64] |= 1L << a;
-		}
 	}
 }
