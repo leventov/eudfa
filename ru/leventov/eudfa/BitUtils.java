@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import static ru.leventov.eudfa.Primes.gcd;
 import static ru.leventov.eudfa.Primes.isPrime;
-import static ru.leventov.eudfa.Primes.lcm;
 
 /**
  * Date: 04.04.12
@@ -91,6 +90,8 @@ public class BitUtils {
 	public static long ringSolve(long multiple, long product, int length) {
 		if (length < 1 || length > 64)
 			throw new IllegalArgumentException();
+		if (product == 0L) // иначе вернет все length нижних битов
+			throw new IllegalArgumentException();
 
 		long tMask = ~(-1L << length);
 		product &= tMask;
@@ -109,7 +110,71 @@ public class BitUtils {
 		return 0L;
 	}
 
-	public static ArrayList<Long> possibleLeftsFromProduct(
+	public static ArrayList<Long> minimumSolutions(
+			long multiple, long product, int length) {
+		/* Повторение условий ringSolve */
+		if (length < 1 || length > 64)
+			throw new IllegalArgumentException();
+		if (product == 0L) // иначе вернет все length нижних битов
+			throw new IllegalArgumentException();
+
+		long tMask = ~(-1L << length);
+		product &= tMask;
+		multiple &= tMask;
+		/* Конец повторения */
+
+
+		int[] solPoints = new int[64];
+		int c = 0;
+		long notP = ~product;
+		for(int i = 0; i < length; i++) {
+			long shM = ((multiple << i) | (multiple >>> (length - i)))
+					& tMask;
+			if ((shM & notP) != 0) continue; // вылезло
+			solPoints[c++] = i; // отличие тут только
+			product &= ~shM;
+		}
+		if (product != 0) return new ArrayList<>(0);
+		/* Да и посюда почти то же самое. Надо следить*/
+
+		product = ~notP;
+
+		/*
+		Это полный перебор - поиск минимальных подпокрытий.
+		 */
+		int minPointCount = 65;
+		ArrayList<Long> results = new ArrayList<>();
+		for (int i = 1; i < (1 << c); i++) {
+			long solProduct = 0L;
+			int pc = 0;
+			for (int k = 0; k < c; k++) {
+				if ((i & (1 << k)) != 0) {
+					solProduct |= (multiple << solPoints[k]) |
+							    (multiple >>> (length - solPoints[k]));
+					pc++;
+				}
+			}
+			solProduct &= tMask;
+			if (solProduct == product) {
+				if (pc <= minPointCount) {
+					if (pc < minPointCount) {
+						results.clear();
+						minPointCount = pc;
+					}
+
+					long solution = 0L;
+					for (int k = 0; k < c; k++)
+						if ((i & (1 << k)) != 0)
+							solution |= 1 << solPoints[k];
+
+					results.add(solution);
+				}
+			}
+		}
+		return results;
+	}
+
+	public static ArrayList<Long> possibleMultiples(
 			int leftStep, int rightStep,
 			long product, int length)
 	{
@@ -149,14 +214,6 @@ public class BitUtils {
 		}
 
 		return results;
-	}
-
-	public static void main(String[] args) {
-		ArrayList<Long> a = possibleLeftsFromProduct(1,1,45,6);
-		for (long l : a) {
-			System.out.println(Long.toBinaryString(l));
-		}
-		System.out.println(a.size());
 	}
 
 }

@@ -4,7 +4,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import static org.junit.Assert.*;
+import java.util.ArrayList;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.matchers.JUnitMatchers.everyItem;
 import static ru.leventov.eudfa.BitUtils.*;
 
 /**
@@ -39,5 +45,60 @@ public class BitUtilsTests {
 		assertTrue(ringSolve(1L, 0b11L, 2) == 0b11L);
 		assertTrue(ringSolve(0b11L, 0b10L, 2) == 0L); // ничего не подходит
 		assertTrue(ringSolve(0b00010101L, 0b01010101L, 8) ==  0b01010101L); // 0010 * 10101000 = 1010
+	}
+
+	@Test public void testPossibleMultiplesAreLegal() {
+		int[] lengths = new int[]     {8,           8,           6};
+		long[] products = new long [] {0b10101010L, 0b10011001L, 0b101111L};
+		for (int i = 0; i < lengths.length; i++) {
+			int length = lengths[i];
+			long product = products[i];
+			ArrayList<Long> pLefts = possibleMultiples(1, 1, product, length);
+
+			ArrayList<Long> rights = new ArrayList<>(pLefts.size());
+			for (long l : pLefts) rights.add(ringSolve(l, product, length));
+			//System.out.println(rights);
+
+			assertThat(rights, everyItem(not(equalTo(0L))));
+		}
+	}
+
+	@Test public void testPossibleMultiplesMissed() {
+		int[] lengths = new int[]     {8,           8,           6,         4,     };
+		long[] products = new long [] {0b10101010L, 0b10011001L, 0b101111L, 0b0011L};
+		for (int i = 0; i < lengths.length; i++) {
+			int length = lengths[i];
+			long product = products[i];
+			ArrayList<Long> pLefts = possibleMultiples(1, 1, product, length);
+
+			// множество невозможных
+			ArrayList<Long> leftComp = new ArrayList<Long>((1 << length) - pLefts.size());
+			for (long j = 0, c = 0; j < 1L << length; j++)
+				if (!pLefts.contains(j)) leftComp.add(j);
+			//System.out.println(leftComp);
+
+			ArrayList<Long> rights = new ArrayList<>(leftComp.size());
+			for (long l : leftComp) rights.add(ringSolve(l, product, length));
+			//System.out.println(rights);
+
+			assertThat(rights, everyItem(equalTo(0L))); // все фейлятся
+		}
+	}
+
+	@Test public void testMinimumSolutions() {
+		long left = 0b101010L;
+		long product = 0b10101010L;
+		int length = 8;
+		ArrayList<Long> rights = minimumSolutions(left, product, length);
+//		for (long r : rights) {
+//			System.out.println(Long.toBinaryString(r));
+//		}
+
+		ArrayList<Long> products = new ArrayList<>(rights.size());
+		for (long r : rights)
+			products.add(ringMultiply(left, length, r, length));
+		//System.out.println(rights);
+
+		assertThat(products, everyItem(equalTo(product)));
 	}
 }

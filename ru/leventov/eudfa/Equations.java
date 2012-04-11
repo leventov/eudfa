@@ -17,17 +17,17 @@ import static ru.leventov.eudfa.Ring.byBits;
  */
 public class Equations {
 
-	public static Ring solveRight(Ring left, Ring product) {
+	public static Ring solve(Ring multiple, Ring product) {
 		if (product == Ring.FULL)
 			return FULL;
 		
-		int pl = product.length(), ll = left.length();
+		int pl = product.length(), ll = multiple.length();
 		if (gcd(ll, pl) == 1)
 			return null;
 
 		int rawPL = lcm(ll, pl);
 		if (rawPL <= 64) {
-			long leftSource = left.wideTo(rawPL).getStatesChuck(0);
+			long leftSource = multiple.wideTo(rawPL).getStatesChuck(0);
 			for(int i = 0; i < rawPL; i += pl) {
 				leftSource |= leftSource >>> i;
 			}
@@ -39,7 +39,7 @@ public class Equations {
 			return byBits(pl, right);
 		}
 
-		int[] allRightAccepts = getAllRightAccepts(left, product);
+		int[] allRightAccepts = getAllAccepts(multiple, product);
 		int al = allRightAccepts.length;
 
 		BitSet productSet = product.statesAsBitSet();
@@ -50,7 +50,7 @@ public class Equations {
 		for(int i = 0; i < al; i++) {
 			Ring right = byAccepts(pl, new int[]{allRightAccepts[i]});
 
-			BitSet acceptSet = left.multiply(right)
+			BitSet acceptSet = multiple.multiply(right)
 					.wideTo(pl).statesAsBitSet();
 
 			BitSet as = (BitSet) acceptSet.clone();
@@ -66,12 +66,12 @@ public class Equations {
 
 
 
-	private static int[] getAllRightAccepts(Ring left, Ring product) {
+	private static int[] getAllAccepts(Ring multiple, Ring product) {
 		int pl = product.length(); // = length of the right ring. see facts.txt
 		int[] rawProductAccepts =
-				rawProduct(left, product, pl).accepts();
+				rawProduct(multiple, product, pl).accepts();
 
-		int start = left.getAccept(0), end = start + pl;
+		int start = multiple.getAccept(0), end = start + pl;
 		int from = binarySearch(rawProductAccepts, start);
 		if (from < 0) from = -from - 1;
 		int to = binarySearch(rawProductAccepts, end);
@@ -91,14 +91,5 @@ public class Equations {
 	                               int anotherLength) {
 		int rawLen = lcm(multiple.length(), anotherLength);
 		return product.wideTo(rawLen);
-	}
-
-	public static void main(String[] args) {
-		Ring solution = solveRight(
-				byAccepts(9, new int[]{0, 1}),
-				byAccepts(3, new int[]{0, 1}));
-
-		System.out.println(solution);
-
 	}
 }
