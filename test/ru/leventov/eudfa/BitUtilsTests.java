@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
@@ -53,7 +54,7 @@ public class BitUtilsTests {
 		for (int i = 0; i < lengths.length; i++) {
 			int length = lengths[i];
 			long product = products[i];
-			ArrayList<Long> pLefts = possibleMultiples(1, 1, product, length);
+			List<Long> pLefts = possibleLefts(1, 1, product, length);
 
 			ArrayList<Long> rights = new ArrayList<>(pLefts.size());
 			for (long l : pLefts) rights.add(ringSolve(l, product, length));
@@ -69,12 +70,12 @@ public class BitUtilsTests {
 		for (int i = 0; i < lengths.length; i++) {
 			int length = lengths[i];
 			long product = products[i];
-			ArrayList<Long> pLefts = possibleMultiples(1, 1, product, length);
+			List<Long> pLefts = possibleLefts(1, 1, product, length);
 
 			// множество невозможных
 			ArrayList<Long> leftComp = new ArrayList<Long>((1 << length) - pLefts.size());
 			for (long j = 0, c = 0; j < 1L << length; j++)
-				if (!pLefts.contains(j)) leftComp.add(j);
+				if (!pLefts.contains(j) ) leftComp.add(j);
 			//System.out.println(leftComp);
 
 			ArrayList<Long> rights = new ArrayList<>(leftComp.size());
@@ -89,7 +90,7 @@ public class BitUtilsTests {
 		long left = 0b101010L;
 		long product = 0b10101010L;
 		int length = 8;
-		ArrayList<Long> rights = minimumSolutions(left, product, length);
+		List<Long> rights = minimumSolutions(left, product, length);
 //		for (long r : rights) {
 //			System.out.println(Long.toBinaryString(r));
 //		}

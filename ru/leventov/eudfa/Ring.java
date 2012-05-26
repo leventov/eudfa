@@ -56,7 +56,7 @@ public final class Ring extends UDFA {
 			if (i != 0) sb.append(", ");
 			sb.append(accepts[i]);
 		}
-		return String.format("[%s] %% %d ", sb.toString(), length());
+		return String.format("{%s} %% %d ", sb.toString(), length());
 	}
 
 	
@@ -76,7 +76,7 @@ public final class Ring extends UDFA {
 	}
 	
 	public Ring multiply(Ring other) {
-		if (other == EMPTY || other == FULL) return other;
+		if (other == EMPTY || this == EMPTY) return EMPTY;
 
 		int leftLen = length(), rightLen = other.length();
 
@@ -112,7 +112,7 @@ public final class Ring extends UDFA {
 		return null;  //TODO
 	}
 
-	public UDFA simplify() {
+	public Ring simplify() {
 		return simplify(length(), accepts, this);
 	}
 	

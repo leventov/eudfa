@@ -94,4 +94,8 @@ public class Primes {
 		return a * b / gcd(a, b);
 	}
 
+	public static void main(String[] args) {
+		System.out.println(inverse(4, 3));
+	}
+
 }

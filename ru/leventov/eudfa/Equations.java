@@ -27,7 +27,7 @@ public class Equations {
 
 		int rawPL = lcm(ll, pl);
 		if (rawPL <= 64) {
-			long leftSource = multiple.wideTo(rawPL).getStatesChuck(0);
+			long leftSource = BitUtils.wide(multiple.getStatesChuck(0), ll, rawPL);
 			for(int i = 0; i < rawPL; i += pl) {
 				leftSource |= leftSource >>> i;
 			}
