@@ -18,22 +18,34 @@ public class Systems {
 
 	public static void main(String[] args) {
 		for (Solution sol :
-		 solve(new int[]{2, 3}, new int[]{1, 1}, new Ring[]{Ring.byAccepts(4, new int[]{0, 1, 2, 3}), Ring.byAccepts(10, new int[]{1, 3, 0})})) {
+		 solve(new int[]{1, 1}, new int[]{1, 2}, new Ring[]{Ring.byAccepts(3, new int[]{1}), Ring.byAccepts(3, new int[]{2})})) {
 			System.out.println(sol);
 		}
 	}
 
 	public static class Solution {
 		final long left, right;
+		final int ll, rl;
 
-		public Solution(long left, long right) {
+		public Solution(long left, int leftLen, long right, int rightLen) {
 			this.left = left;
 			this.right = right;
+			ll = leftLen; rl = rightLen;
 		}
 
 		public String toString() {
-			return "left:" + Long.toBinaryString(left) +
-					" right: " + Long.toBinaryString(right);
+			String binaryLeft = Long.toBinaryString(left);
+			int initL = ll - binaryLeft.length();
+			for (int i = 0; i < initL; i++) {
+				binaryLeft = "0" + binaryLeft;
+			}
+
+			String binaryRight = Long.toBinaryString(right);
+			int initR = rl - binaryRight.length();
+			for (int i = 0; i < initR; i++) {
+				binaryRight = "0" + binaryRight;
+			}
+			return "left:" + binaryLeft +" right: " + binaryRight;
 		}
 	}
 	public static List<Solution> solve(int[] leftPows, int[] rightPows, Ring[] products) {
@@ -103,14 +115,14 @@ public class Systems {
 					long rightMax1 = toCommonForm(ringSolve(left1Eq, rightSteps[1], product1, products[1].length()),
 							products[1].length(), rightSteps[1], rightInverses[1]);
 
-					int resLen = lcm(products[0].length(), products[1].length());
+					int rightLen = lcm(baseRightLens[0], baseRightLens[1]);
 					for (;;) {
-						long comp = wide(rightMax0, products[0].length(), resLen) & wide(rightMax1, products[1].length(), resLen);
-						long zip0 = zip(comp, resLen, products[0].length());
-						long zip1 = zip(comp, resLen, products[1].length());
+						long comp = wide(rightMax0, baseRightLens[0], rightLen) & wide(rightMax1, baseRightLens[1], rightLen);
+						long zip0 = zip(comp, rightLen, baseRightLens[0]);
+						long zip1 = zip(comp, rightLen, baseRightLens[1]);
 
 						if (zip0 == rightMax0 && zip1 == rightMax1) {
-							res.add(new Solution(leftSol, comp));
+							res.add(new Solution(leftSol, lcm(baseLeftLens[0], baseLeftLens[1]), comp, rightLen));
 							continue iterateLefts;
 						}
 

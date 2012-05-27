@@ -1,8 +1,7 @@
 package ru.leventov.eudfa;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static ru.leventov.eudfa.Primes.gcd;
 import static ru.leventov.eudfa.Primes.isPrime;
@@ -134,6 +133,7 @@ public class BitUtils {
 
 	public static List<Long> minimumSolutions(
 			long multiple, int step, long product, int length) {
+
 		/* Повторение условий ringSolve */
 		if (length < 1 || length > 64)
 			throw new IllegalArgumentException();
@@ -146,15 +146,32 @@ public class BitUtils {
 		multiple &= tMask;
 		/* Конец повторения */
 
+		int multiplePointsC = 0;
+		for (int i = 0; i < length; i++) {
+			if ((multiple & (1L << i)) != 0)
+				multiplePointsC++;
+		}
 
-		int[] solPoints = new int[64];
+
+		int[] solPoints = new int[length];
+		int[][] pointSolutions = new int[length][multiplePointsC];
+		int[] solCounts = new int[length];
 		int c = 0;
 		long notP = ~product;
 		for(int i = 0; i < length; i += step) {
 			long shM = ((multiple << i) | (multiple >>> (length - i)))
 					& tMask;
 			if ((shM & notP) != 0) continue; // вылезло
-			solPoints[c++] = i; // отличие тут только
+
+			// отличие тут только
+			int lc = 0;
+			for (int j = 0; j < length; j++) {
+				if ((shM & (1L << j)) != 0) {
+					pointSolutions[c][lc++] = j;
+					solCounts[j]++;
+				}
+			}
+			solPoints[c++] = i;
 			product &= ~shM;
 		}
 		if (product != 0) return Collections.emptyList();
@@ -162,36 +179,49 @@ public class BitUtils {
 
 		product = ~notP;
 
+		class Pair {
+			final ArrayList<Integer> points;
+			final int[] counts;
+
+			Pair(ArrayList<Integer> points, int[] counts) {
+				this.points = points;
+				this.counts = counts;
+			}
+		}
 		/*
 		Это полный перебор - поиск минимальных подпокрытий.
 		 */
-		int minPointCount = 65;
 		ArrayList<Long> results = new ArrayList<>();
-		for (int i = 1; i < (1 << c); i++) {
-			long solProduct = 0L;
-			int pc = 0;
-			for (int k = 0; k < c; k++) {
-				if ((i & (1 << k)) != 0) {
-					solProduct |= (multiple << solPoints[k]) |
-							    (multiple >>> (length - solPoints[k]));
-					pc++;
+		Queue<Pair> covers = new ArrayDeque<>();
+		ArrayList<Integer> aCover = new ArrayList<>();
+		for (int i = 0; i < c; i++) {
+			aCover.add(solPoints[i]);
+		}
+		covers.add(new Pair(aCover, solCounts));
+		while (!covers.isEmpty()) {
+			Pair solution = covers.poll();
+			boolean canBeLess = false;
+			loopPoints: for (int i = 0; i < solution.points.size(); i++) {
+				int point = solution.points.get(i);
+				for (int pointSol: pointSolutions[point]) {
+					if (solution.counts[pointSol] == 1)
+						continue loopPoints;
 				}
+				canBeLess = true;
+
+				int[] newCounts = Arrays.copyOf(solution.counts, solution.counts.length);
+				for (int pointSol: pointSolutions[point])
+					newCounts[pointSol]--;
+				ArrayList<Integer> newPoints = new ArrayList<>();
+				for (int p : solution.points)
+					if (point != p) newPoints.add(p);
+				covers.add(new Pair(newPoints, newCounts));
 			}
-			solProduct &= tMask;
-			if (solProduct == product) {
-				if (pc <= minPointCount) {
-					if (pc < minPointCount) {
-						results.clear();
-						minPointCount = pc;
-					}
-
-					long solution = 0L;
-					for (int k = 0; k < c; k++)
-						if ((i & (1 << k)) != 0)
-							solution |= 1 << solPoints[k];
-
-					results.add(solution);
-				}
+			if (!canBeLess) {
+				long sol = 0L;
+				for (int point : solution.points)
+					sol |= (1L << point);
+				results.add(sol);
 			}
 		}
 		return results;
@@ -217,7 +247,7 @@ public class BitUtils {
 		int leftCount = 1 << (length / leftStep);
 		long leftMaskUnit = ~(-1L << leftStep), notP = ~product;
 		long leftMask = 0L;
-		for(int i = 1; i < leftCount; i++) {
+		for(int i = 1; i <= leftCount; i++) {
 			long pReminder = product;
 			leftMask += leftMaskUnit;
 			long left = baseLeft & leftMask;
