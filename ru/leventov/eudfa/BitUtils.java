@@ -167,7 +167,7 @@ public class BitUtils {
 			int lc = 0;
 			for (int j = 0; j < length; j++) {
 				if ((shM & (1L << j)) != 0) {
-					pointSolutions[c][lc++] = j;
+					pointSolutions[i][lc++] = j;
 					solCounts[j]++;
 				}
 			}
